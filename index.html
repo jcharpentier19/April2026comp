@@ -1029,7 +1029,7 @@
   }
   .award-level-title.novice { background: #2e6285; }
   .award-level-title.intermediate { background: #5a3a8a; }
-  .award-level-title.advanced { background: var(--rose); }
+  .award-level-title.competitive { background: var(--rose); }
   .award-level-badge {
     font-size: 11px;
     font-weight: 600;
@@ -1037,6 +1037,93 @@
     padding: 2px 10px;
     border-radius: 20px;
   }
+  .award-section-block {
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .award-section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 8px 0;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--rose);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .award-section-title svg {
+    width: 18px;
+    height: 18px;
+    color: var(--rose);
+    flex-shrink: 0;
+  }
+  .award-level-desc {
+    font-size: 13.5px;
+    color: #555;
+    line-height: 1.55;
+    padding: 10px 14px;
+    background: #fff;
+    border-radius: 0 0 8px 8px;
+    border: 1px solid #f0e8e8;
+    border-top: none;
+  }
+  .award-level-desc strong { color: var(--text); }
+  .award-info-card {
+    background: #fff;
+    border: 1px solid #f0e8e8;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    color: #555;
+    line-height: 1.6;
+  }
+  .award-info-card strong { color: var(--text); }
+  .award-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .award-tag-list li {
+    background: #fff;
+    border: 1px solid #f0e8e8;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .award-score-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 14px;
+  }
+  .award-score-table thead th {
+    background: #f5f0f0;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+  .award-score-table tbody td {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0e8e8;
+    color: var(--text);
+  }
+  .award-score-table tbody tr:last-child td { border-bottom: none; }
+  .award-score-table tbody tr:hover { background: var(--soft-pink); }
+  .award-score-table .tier-name { font-weight: 700; }
   .award-table {
     width: 100%;
     border-collapse: collapse;
@@ -1082,6 +1169,8 @@
     .award-table { font-size: 13px; }
     .award-table thead th, .award-table tbody td { padding: 8px 10px; }
     .award-toggle-btn { font-size: 12px; padding: 7px 14px; }
+    .award-score-table { font-size: 13px; }
+    .award-score-table thead th, .award-score-table tbody td { padding: 8px 10px; }
   }
 
 
@@ -1121,49 +1210,168 @@
 
     <div class="award-table-wrap" id="awardTableWrap">
 
-      <!-- Novice Level -->
-      <div class="award-level-block" style="margin-top:24px;">
-        <div class="award-level-title novice">
-          Novice Level
-          <span class="award-level-badge">0 Routines</span>
+      <!-- Competition Levels -->
+      <div class="award-section-block" style="margin-top:24px;">
+        <div class="award-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          Competition Levels
         </div>
-        <table class="award-table">
-          <thead>
-            <tr><th>Category</th><th style="text-align:center">Routines</th><th>Placement Awards</th></tr>
-          </thead>
+        <p class="award-info-card" style="margin-bottom:14px;font-size:13px;color:#777;">
+          Levels are based on technical ability and execution of movements, not just class time.
+        </p>
+
+        <!-- Novice -->
+        <div class="award-level-block" style="margin-bottom:10px;">
+          <div class="award-level-title novice">
+            Novice Level
+            <span class="award-level-badge">12 &amp; Under Only</span>
+          </div>
+          <div class="award-level-desc">
+            For dancers with limited technical training focused on basic foundational movements, taking no more than <strong>3 technique classes per week</strong>. Example skills: single pirouette, cha&icirc;n&eacute; turns, piqu&eacute; turns, and simple leaps. Limited to one solo per event.
+          </div>
+        </div>
+
+        <!-- Intermediate -->
+        <div class="award-level-block" style="margin-bottom:10px;">
+          <div class="award-level-title intermediate">
+            Intermediate Level
+          </div>
+          <div class="award-level-desc">
+            Dancers taking no more than <strong>5 technique classes per week</strong> who can execute basic skills and begin some advanced movements. Example skills: double pirouettes, grand jet&eacute;s, maxi ford turns, double stag leaps, arabesque pitch, and attitude positioning. Dancers may choose to perform up in the Competitive level to be considered for Scholarship Vouchers and Titles.
+          </div>
+        </div>
+
+        <!-- Competitive -->
+        <div class="award-level-block" style="margin-bottom:0;">
+          <div class="award-level-title competitive">
+            Competitive Level
+          </div>
+          <div class="award-level-desc">
+            Dancers are expected to be technically aware of everything they perform, with <strong>original/creative choreography</strong> and polished, well-rehearsed performances. Example skills: triple pirouettes, leg hold turns, switch leaps, fouett&eacute; turns, turns &agrave; la seconde, calypsos, illusions.
+          </div>
+        </div>
+      </div>
+
+      <!-- Age Divisions -->
+      <div class="award-section-block">
+        <div class="award-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Age Divisions
+        </div>
+        <div class="award-info-card">
+          Based on age as of <strong>January 1, 2026</strong>. For group routines, the average age of all dancers is used.
+          <table class="award-score-table" style="margin-top:10px;">
+            <thead><tr><th>Division</th><th>Age Range</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Mini</strong></td><td>6 &amp; Under</td></tr>
+              <tr><td><strong>Child</strong></td><td>7&ndash;9</td></tr>
+              <tr><td><strong>Junior</strong></td><td>10&ndash;12</td></tr>
+              <tr><td><strong>Teen</strong></td><td>13&ndash;15</td></tr>
+              <tr><td><strong>Senior</strong></td><td>16&ndash;19</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Dance Categories -->
+      <div class="award-section-block">
+        <div class="award-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          Dance Categories
+        </div>
+        <ul class="award-tag-list">
+          <li>Acro</li>
+          <li>Ballet</li>
+          <li>Character</li>
+          <li>Clogging</li>
+          <li>Contemporary</li>
+          <li>Cultural</li>
+          <li>Hip Hop</li>
+          <li>Jazz</li>
+          <li>Lyrical</li>
+          <li>Modern</li>
+          <li>Musical Theater</li>
+          <li>Open</li>
+          <li>Pointe</li>
+          <li>Pom</li>
+          <li>Showdance</li>
+          <li>Tap</li>
+          <li>Twirling</li>
+        </ul>
+      </div>
+
+      <!-- Scoring System -->
+      <div class="award-section-block">
+        <div class="award-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Scoring System
+        </div>
+        <div class="award-info-card" style="margin-bottom:10px;">
+          Three judges each have <strong>200 points</strong> (100 for Technique, 100 for Presentation) for a maximum of <strong>600 points</strong> total.
+        </div>
+        <table class="award-score-table">
+          <thead><tr><th>Tier</th><th>Score Range</th></tr></thead>
           <tbody>
+            <tr><td class="tier-name" style="color:#cc1122;">Elite Gold</td><td>570&ndash;600</td></tr>
+            <tr><td class="tier-name" style="color:#d4a017;">High Gold</td><td>546&ndash;569.4</td></tr>
+            <tr><td class="tier-name" style="color:#c5960c;">Gold</td><td>522&ndash;545.4</td></tr>
+            <tr><td class="tier-name" style="color:#8a8a8a;">High Silver</td><td>498&ndash;521.4</td></tr>
+            <tr><td class="tier-name" style="color:#999;">Silver</td><td>480&ndash;497.4</td></tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Intermediate Level -->
-      <div class="award-level-block">
-        <div class="award-level-title intermediate">
-          Intermediate Level
-          <span class="award-level-badge">0 Routines</span>
+      <!-- Overall Awards -->
+      <div class="award-section-block">
+        <div class="award-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+          Overall Awards
         </div>
-        <table class="award-table">
-          <thead>
-            <tr><th>Category</th><th style="text-align:center">Routines</th><th>Placement Awards</th></tr>
-          </thead>
-          <tbody>
-          </tbody>
-        </table>
+        <div class="award-info-card">
+          Novice, Intermediate, and Competitive routines receive overall awards at each session per age group. For <strong>Competitive and Intermediate soloists</strong>, placements up to <strong>10th place</strong> are awarded when there are 20 or more competing dancers. All other categories receive up to <strong>5th place</strong>.
+        </div>
       </div>
 
-      <!-- Advanced Level -->
-      <div class="award-level-block">
-        <div class="award-level-title advanced">
-          Advanced Level
-          <span class="award-level-badge">0 Routines</span>
+      <!-- Special Awards -->
+      <div class="award-section-block">
+        <div class="award-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Special Awards
         </div>
-        <table class="award-table">
-          <thead>
-            <tr><th>Category</th><th style="text-align:center">Routines</th><th>Placement Awards</th></tr>
-          </thead>
-          <tbody>
-          </tbody>
-        </table>
+        <div class="award-info-card">
+          <ul class="award-tag-list" style="margin-bottom:10px;">
+            <li>Creative Concept Award</li>
+            <li>Choreography Award</li>
+            <li>Entertainment Award</li>
+            <li>Spirit Award</li>
+            <li>ADCC Award</li>
+          </ul>
+          <p style="margin:8px 0 0;font-size:13px;color:#666;">
+            At each regional, the <strong>ADCC Award</strong> goes to the studio with the highest-scoring competitive level group routine. At the end of the regional tour, all Studio of Excellence winners are put to an online vote for <strong>Studio of the Year</strong>, which includes a cash prize and banner.
+          </p>
+        </div>
+      </div>
+
+      <!-- Titles -->
+      <div class="award-section-block">
+        <div class="award-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+          Titles
+        </div>
+        <div class="award-info-card">
+          Titles are awarded by age group &mdash; <strong>Junior Headliner</strong>, <strong>Teen Headliner</strong>, and <strong>Senior Headliner</strong> &mdash; going to the highest-scoring routine in each age category from the Competitive level.
+        </div>
+      </div>
+
+      <!-- Nationals -->
+      <div class="award-section-block" style="margin-bottom:0;">
+        <div class="award-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          Nationals
+        </div>
+        <div class="award-info-card">
+          Nationals awards nearly <strong>$500,000 in college scholarships</strong>, includes convention classes, a <strong>Platinum Circle Dance Off</strong>, and an <strong>awards gala</strong>.
+        </div>
       </div>
 
     </div>
