@@ -2067,7 +2067,36 @@
   markPastRoutines();
   setInterval(markPastRoutines, 60000);
 </script>
+  
+<!-- Welcome Popup Modal -->
+<div class="welcome-overlay" id="welcomeModal" onclick="closeWelcomeModal(event)">
+  <div class="welcome-modal" onclick="event.stopPropagation()">
+    <button class="modal-close-x" onclick="closeWelcomeModal()" aria-label="Close">&times;</button>
+    <img src="AFDS_RECTANGLE_1500px.jpg" alt="A Fine Dance Studio Logo" class="modal-logo">
+    <h2>Thank You for an Amazing Dance Accelerator Weekend! 💃✨</h2>
+    <p>
+      To our incredible dancers, dedicated teachers, and supportive families — thank you from the bottom of our hearts ❤️ for making this year's Dance Accelerator truly unforgettable.
+    </p>
+    <p>
+      Every leap, every turn, and every moment on that stage reflected the hours of hard work, passion, and commitment you've each poured into your craft. We are so deeply proud of each and every one of you 🩷
+    </p>
+    <p>
+      This weekend was a celebration of everything that makes our dance community so special — the joy, the teamwork, the courage to shine ✨ You all showed up and gave it your absolute best, and it was beautiful to witness 💃
+    </p>
+    <p class="modal-signoff">
+      With Love,<br>Miss Abigail &amp; the entire A Fine Dance Studio Team ❤️
+    </p>
+    <button class="modal-close-btn" onclick="closeWelcomeModal()">Close with gratitude 💕</button>
+  </div>
+</div>
 
+<script>
+function closeWelcomeModal(e) {
+  if (e && e.target && e.target !== document.getElementById('welcomeModal')) return;
+  var modal = document.getElementById('welcomeModal');
+  if (modal) modal.style.display = 'none';
+}
+</script>
 
 </body>
 </html>
