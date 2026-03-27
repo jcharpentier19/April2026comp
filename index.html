@@ -860,6 +860,33 @@
     }
   }
 
+  /* ===== LOADING STATE ===== */
+  .loading-state {
+    text-align: center;
+    padding: 40px 24px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .loading-spinner {
+    display: inline-block;
+    width: 28px; height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--rose);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .load-error {
+    text-align: center;
+    padding: 40px 24px;
+    color: #8a3a3a;
+    font-size: 14px;
+    background: #fdeaea;
+    border-radius: 10px;
+    margin: 12px 0;
+  }
+
   /* ===== AWARD RESULTS ON CARDS ===== */
   .award-results {
     margin-top: 8px;
@@ -1520,25 +1547,406 @@
 </div>
 
 <script>
+  /* ===== GOOGLE SHEETS CONFIG ===== */
+  var SHEET_ID = '16CLEe2xuHGYAlvxdCRYHUfGRDW4390o-';
+  var SCHEDULE_GID = '2110361654';
+  var AWARDS_GID = '1916955217';
+  var SCHEDULE_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + SCHEDULE_GID;
+  var AWARDS_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + AWARDS_GID;
+  var AWARDS_POLL_INTERVAL = 30000; // 30 seconds
+
+  /* ===== CSV PARSER ===== */
+  function parseCSV(text) {
+    var rows = [];
+    var current = '';
+    var inQuotes = false;
+    var row = [];
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (inQuotes) {
+        if (ch === '"' && text[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else if (ch === '"') {
+          inQuotes = false;
+        } else {
+          current += ch;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          row.push(current.trim());
+          current = '';
+        } else if (ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) {
+          row.push(current.trim());
+          current = '';
+          if (row.length > 1 || row[0] !== '') rows.push(row);
+          row = [];
+          if (ch === '\r') i++;
+        } else {
+          current += ch;
+        }
+      }
+    }
+    if (current || row.length) {
+      row.push(current.trim());
+      if (row.length > 1 || row[0] !== '') rows.push(row);
+    }
+    return rows;
+  }
+
+  function csvToObjects(text) {
+    var rows = parseCSV(text);
+    if (rows.length < 2) return [];
+    var headers = rows[0];
+    var result = [];
+    for (var i = 1; i < rows.length; i++) {
+      var obj = {};
+      for (var j = 0; j < headers.length; j++) {
+        obj[headers[j]] = (rows[i][j] || '').trim();
+      }
+      result.push(obj);
+    }
+    return result;
+  }
+
+  /* ===== GRID MAPPING ===== */
+  var GRID_MAP = {
+    'fri-eve': 'grid-fri-eve',
+    'sat-morn': 'grid-sat-morn',
+    'sat-aft': 'grid-sat-aft',
+    'sat-eve': 'grid-sat-eve',
+    'sun-morn': 'grid-sun-morn',
+    'sun-aft': 'grid-sun-aft'
+  };
+
+  /* ===== LEVEL & AGE MAPPINGS ===== */
+  var LEVEL_TAG_CLASS = {
+    'Novice': 'tag-novice',
+    'Intermediate': 'tag-intermediate',
+    'Competitive': 'tag-advanced'
+  };
+  var LEVEL_DATA = {
+    'Novice': 'Novice',
+    'Intermediate': 'Intermediate',
+    'Competitive': 'Advanced'
+  };
+  var AGE_TAG_CLASS = {
+    'Mini': 'tag-tiny',
+    'Child': 'tag-petite',
+    'Junior': 'tag-junior',
+    'Teen': 'tag-teen',
+    'Senior': 'tag-senior'
+  };
+
+  /* ===== RENDER ROUTINES FROM SHEET DATA ===== */
+  function renderRoutines(routines) {
+    // Clear all grids
+    Object.values(GRID_MAP).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = '';
+    });
+
+    routines.forEach(function(r) {
+      var sessionKey = r['Session Key'];
+      var gridId = GRID_MAP[sessionKey];
+      if (!gridId) return;
+      var grid = document.getElementById(gridId);
+      if (!grid) return;
+
+      var routineNum = r['Routine #'];
+      var title = r['Title'] || '';
+      var category = r['Category'] || '';
+      var ageDivision = r['Age Division'] || '';
+      var groupSize = r['Group Size'] || '';
+      var level = r['Level'] || '';
+      var dayKey = r['Day Key'] || '';
+      var stageTime = r['Stage Time'] || '';
+      var arriveTime = r['Arrive Time'] || '';
+      var dancers = r['Dancer(s)'] || '';
+      var titleContender = r['Title Contender?'] || '';
+
+      var isSolo = groupSize === 'Solo';
+      var dancerList = dancers.split(',').map(function(d) { return d.trim(); }).filter(Boolean);
+      var dancerCount = dancerList.length;
+
+      // Build searchable text
+      var searchTxt = [routineNum, title, category, ageDivision, groupSize, level, dancers].join(' ').toLowerCase();
+
+      // Build the routine row
+      var row = document.createElement('div');
+      row.className = 'routine-row';
+      row.dataset.day = dayKey;
+      row.dataset.level = LEVEL_DATA[level] || level;
+      row.dataset.age = ageDivision;
+      row.dataset.txt = searchTxt;
+      row.dataset.routineNum = routineNum;
+
+      // Dot column (desktop timeline)
+      var dotCol = document.createElement('div');
+      dotCol.className = 'dot-col';
+      dotCol.innerHTML = '<div class="dot"></div><div class="rnum">#' + routineNum + '</div>';
+      row.appendChild(dotCol);
+
+      // Routine card
+      var card = document.createElement('div');
+      card.className = 'routine-card';
+      if (titleContender) card.classList.add('is-title');
+
+      var body = document.createElement('div');
+      body.className = 'routine-body';
+
+      // Mobile routine number
+      var rnumMobile = document.createElement('div');
+      rnumMobile.className = 'rnum-mobile';
+      rnumMobile.textContent = '#' + routineNum;
+      body.appendChild(rnumMobile);
+
+      // Title
+      var titleEl = document.createElement('div');
+      titleEl.className = 'routine-title';
+      titleEl.textContent = title;
+      if (titleContender) {
+        var pip = document.createElement('span');
+        pip.className = 'title-pip';
+        titleEl.appendChild(pip);
+      }
+      body.appendChild(titleEl);
+
+      // Dancer name or group info
+      if (isSolo) {
+        var dancerEl = document.createElement('div');
+        dancerEl.className = 'routine-dancer';
+        dancerEl.textContent = dancers;
+        body.appendChild(dancerEl);
+      } else {
+        var dancerEl = document.createElement('div');
+        dancerEl.className = 'routine-dancer';
+        dancerEl.textContent = groupSize + ' (' + dancerCount + ')';
+        body.appendChild(dancerEl);
+        var rosterEl = document.createElement('div');
+        rosterEl.className = 'routine-roster';
+        rosterEl.textContent = dancers;
+        body.appendChild(rosterEl);
+      }
+
+      // Tags
+      var tagsEl = document.createElement('div');
+      tagsEl.className = 'tags';
+
+      var levelTag = document.createElement('span');
+      levelTag.className = 'tag ' + (LEVEL_TAG_CLASS[level] || 'tag-advanced');
+      levelTag.textContent = level;
+      tagsEl.appendChild(levelTag);
+
+      var ageTag = document.createElement('span');
+      ageTag.className = 'tag ' + (AGE_TAG_CLASS[ageDivision] || 'tag-teen');
+      ageTag.textContent = ageDivision;
+      tagsEl.appendChild(ageTag);
+
+      var genreTag = document.createElement('span');
+      genreTag.className = 'tag tag-genre';
+      genreTag.textContent = category + ' \u00B7 ' + groupSize;
+      tagsEl.appendChild(genreTag);
+
+      body.appendChild(tagsEl);
+
+      // Award results placeholder (populated by awards fetch)
+      var awardResults = document.createElement('div');
+      awardResults.className = 'award-results';
+      awardResults.id = 'awards-' + routineNum;
+      awardResults.style.display = 'none';
+      body.appendChild(awardResults);
+
+      card.appendChild(body);
+
+      // Time column
+      var timeCol = document.createElement('div');
+      timeCol.className = 'routine-time-col';
+
+      var timeStage = document.createElement('div');
+      timeStage.className = 'time-stage';
+      timeStage.textContent = stageTime;
+      timeCol.appendChild(timeStage);
+
+      var timeArrive = document.createElement('div');
+      timeArrive.className = 'time-arrive';
+      timeArrive.textContent = arriveTime === 'Already There' ? 'Already There' : ('Arrive ' + arriveTime);
+      timeCol.appendChild(timeArrive);
+
+      card.appendChild(timeCol);
+      row.appendChild(card);
+      grid.appendChild(row);
+    });
+
+    // After rendering, init reminders, store original times, run all post-render hooks
+    initReminders();
+    storeOriginalTimes();
+    filterAll();
+    updateCounts();
+
+    // Fetch shift and apply
+    loadShiftForAll();
+  }
+
+  /* ===== AWARD DISPLAY LOGIC ===== */
+  function applyAwards(awardsData) {
+    // Build lookup by routine number
+    var awardMap = {};
+    awardsData.forEach(function(a) {
+      var num = a['Routine #'];
+      if (!num) return;
+      awardMap[num] = {
+        adjudication: (a['Adjudication'] || '').trim(),
+        special: (a['Special Awards'] || '').trim()
+      };
+    });
+
+    // Update each routine card
+    Object.keys(awardMap).forEach(function(num) {
+      var info = awardMap[num];
+      var container = document.getElementById('awards-' + num);
+      if (!container) return;
+
+      // Skip if nothing to show
+      if (!info.adjudication && !info.special) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+
+      var html = '';
+
+      // Adjudication tier (e.g., "Platinum", "High Gold", "Gold", "High Silver", "Silver")
+      if (info.adjudication) {
+        var adj = info.adjudication;
+        var adjLower = adj.toLowerCase().replace(/\s+/g, '');
+        var adjClass = 'award-tag-gold';
+        var adjIcon = '\uD83E\uDD47'; // medal
+        if (adjLower === 'platinum' || adjLower === 'elitegold') {
+          adjClass = 'award-tag-platinum';
+          adjIcon = '\uD83D\uDC8E';
+        } else if (adjLower === 'highgold') {
+          adjClass = 'award-tag-highgold';
+          adjIcon = '\uD83E\uDD47';
+        } else if (adjLower === 'gold') {
+          adjClass = 'award-tag-gold';
+          adjIcon = '\uD83E\uDD47';
+        } else if (adjLower === 'highsilver' || adjLower === 'silver') {
+          adjClass = 'award-tag-gold';
+          adjIcon = '\uD83E\uDD48';
+        }
+
+        // Check if adjudication includes an overall placement (e.g., "High Gold | 3rd Overall")
+        var parts = adj.split('|').map(function(p) { return p.trim(); });
+        var tierText = parts[0];
+        html += '<span class="award-tag ' + adjClass + '">' + adjIcon + ' ' + tierText + '</span>';
+
+        if (parts[1]) {
+          html += '<span class="award-tag award-tag-overall">\uD83C\uDFC6 ' + parts[1] + '</span>';
+        }
+      }
+
+      // Special awards
+      if (info.special) {
+        var specials = info.special.split('|').map(function(s) { return s.trim(); });
+        specials.forEach(function(s) {
+          if (s) html += '<span class="award-tag award-tag-special">\u2B50 ' + s + '</span>';
+        });
+      }
+
+      container.innerHTML = html;
+      container.style.display = html ? 'flex' : 'none';
+    });
+  }
+
+  /* ===== FETCH SCHEDULE DATA ===== */
+  function showLoading() {
+    Object.values(GRID_MAP).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div><div>Loading schedule from spreadsheet\u2026</div></div>';
+    });
+  }
+
+  function showError(msg) {
+    Object.values(GRID_MAP).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="load-error">' + msg + '</div>';
+    });
+  }
+
+  function fetchSchedule() {
+    showLoading();
+    fetch(SCHEDULE_URL)
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      })
+      .then(function(csv) {
+        var data = csvToObjects(csv);
+        if (data.length === 0) throw new Error('No routines found');
+        renderRoutines(data);
+        // Start polling awards after schedule is loaded
+        fetchAwards();
+        setInterval(fetchAwards, AWARDS_POLL_INTERVAL);
+      })
+      .catch(function(err) {
+        showError('Could not load schedule. Please refresh the page. (' + err.message + ')');
+      });
+  }
+
+  /* ===== FETCH AWARDS (polled every 30s) ===== */
+  var _lastAwardsHash = '';
+
+  function fetchAwards() {
+    fetch(AWARDS_URL + '&_t=' + Date.now()) // cache-bust
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      })
+      .then(function(csv) {
+        // Quick hash check to avoid unnecessary DOM updates
+        var hash = simpleHash(csv);
+        if (hash === _lastAwardsHash) return;
+        _lastAwardsHash = hash;
+
+        var data = csvToObjects(csv);
+        applyAwards(data);
+      })
+      .catch(function() { /* silently ignore award fetch errors */ });
+  }
+
+  function simpleHash(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      var ch = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + ch;
+      hash |= 0;
+    }
+    return '' + hash;
+  }
+
+  /* ===== CORE UI FUNCTIONS ===== */
+
   function toggleAwardTable() {
-    const wrap = document.getElementById('awardTableWrap');
-    const btn = document.getElementById('awardToggleBtn');
-    const isOpen = wrap.classList.toggle('open');
+    var wrap = document.getElementById('awardTableWrap');
+    var btn = document.getElementById('awardToggleBtn');
+    var isOpen = wrap.classList.toggle('open');
     btn.classList.toggle('open', isOpen);
-    // Update only the text node (last child after the SVG)
-    const textNodes = Array.from(btn.childNodes).filter(n => n.nodeType === 3);
+    var textNodes = Array.from(btn.childNodes).filter(function(n) { return n.nodeType === 3; });
     if (textNodes.length) textNodes[textNodes.length - 1].textContent = isOpen ? ' Hide Award Structure' : ' View Award Structure';
   }
 
-  let activeDay = 'all';
+  var activeDay = 'all';
 
   function showDay(day, btn) {
     activeDay = day;
-    document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.day-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.day-tab').forEach(function(t) { t.classList.remove('active'); });
     btn.classList.add('active');
     if (day === 'all') {
-      document.querySelectorAll('.day-panel').forEach(p => p.classList.add('active'));
+      document.querySelectorAll('.day-panel').forEach(function(p) { p.classList.add('active'); });
     } else {
       document.getElementById('panel-' + day).classList.add('active');
     }
@@ -1546,18 +1954,18 @@
   }
 
   function filterAll() {
-    const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    const rows = document.querySelectorAll('.routine-row');
-    let anyVisible = false;
+    var query = document.getElementById('searchInput').value.toLowerCase().trim();
+    var rows = document.querySelectorAll('.routine-row');
+    var anyVisible = false;
 
-    rows.forEach(row => {
-      const panel = row.closest('.day-panel');
+    rows.forEach(function(row) {
+      var panel = row.closest('.day-panel');
       if (!panel || !panel.classList.contains('active')) {
         row.classList.add('hidden');
         return;
       }
-      const searchable = (row.dataset.txt || '') + ' ' + row.innerText.toLowerCase();
-      const ok = !query || searchable.includes(query);
+      var searchable = (row.dataset.txt || '') + ' ' + row.innerText.toLowerCase();
+      var ok = !query || searchable.includes(query);
       row.classList.toggle('hidden', !ok);
       if (ok) anyVisible = true;
     });
@@ -1570,48 +1978,38 @@
     [['grid-fri-eve','cnt-fri-eve'],
      ['grid-sat-morn','cnt-sat-morn'],['grid-sat-aft','cnt-sat-aft'],['grid-sat-eve','cnt-sat-eve'],
      ['grid-sun-morn','cnt-sun-morn'],['grid-sun-aft','cnt-sun-aft']]
-    .forEach(([gid, cid]) => {
-      const g = document.getElementById(gid);
-      const c = document.getElementById(cid);
+    .forEach(function(pair) {
+      var g = document.getElementById(pair[0]);
+      var c = document.getElementById(pair[1]);
       if (!g || !c) return;
-      const vis = g.querySelectorAll('.routine-row:not(.hidden)').length;
+      var vis = g.querySelectorAll('.routine-row:not(.hidden)').length;
       c.textContent = vis + ' routine' + (vis !== 1 ? 's' : '');
     });
   }
 
-  // Keep search simple so mobile browsers do not get stuck in a weird scroll state
-  const searchInput = document.getElementById('searchInput');
+  // Search input
+  var searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchInput.addEventListener('input', filterAll);
-
-    // On Enter key, dismiss keyboard on mobile
     searchInput.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        searchInput.blur();
-      }
+      if (e.key === 'Enter') searchInput.blur();
     });
-
-
   }
 
-  filterAll();
-  updateCounts();
-
   /* ===== REMINDER / ADD-TO-CALENDAR ===== */
-  (function initReminders() {
-    // Toast element
-    var toast = document.createElement('div');
-    toast.className = 'reminder-toast';
-    toast.id = 'reminderToast';
-    document.body.appendChild(toast);
+  // Create toast element once
+  var toast = document.createElement('div');
+  toast.className = 'reminder-toast';
+  toast.id = 'reminderToast';
+  document.body.appendChild(toast);
 
-    // Inject bell button into each routine card's time column
+  function initReminders() {
     document.querySelectorAll('.routine-row').forEach(function(row) {
       var timeCol = row.querySelector('.routine-time-col');
       var timeStage = row.querySelector('.time-stage');
       if (!timeCol || !timeStage) return;
       var timeText = timeStage.textContent.trim();
-      if (timeText === '\u2014' || !timeText) return; // Skip moved/empty routines
+      if (timeText === '\u2014' || !timeText) return;
 
       var btn = document.createElement('button');
       btn.className = 'reminder-btn';
@@ -1629,7 +2027,7 @@
       label.textContent = 'Remind';
       timeCol.appendChild(label);
     });
-  })();
+  }
 
   function downloadICS(row) {
     var title = (row.querySelector('.routine-title') || {}).textContent || 'Routine';
@@ -1642,7 +2040,7 @@
     timeArrive = timeArrive.trim();
     var day = row.dataset.day;
 
-    var dateMap = { fri: '2026-03-06', sat: '2026-03-07', sun: '2026-03-08' };
+    var dateMap = { fri: '2026-04-10', sat: '2026-04-11', sun: '2026-04-12' };
     var dateStr = dateMap[day];
     if (!dateStr || !timeStage) return;
 
@@ -1657,7 +2055,7 @@
       (dancer ? '\\nDancer(s): ' + dancer : '') +
       '\\nStage Time: ' + timeStage +
       (timeArrive ? '\\n' + timeArrive : '') +
-      '\\n\\nHeadliners Dance Competition \\u2014 April 10\\u201312, 2026\\nThe Stockbridge Theater at Pinkerton Academy, Derry, NH\\nMain Entrance GPS: https://maps.apple/p/QyFEj3q6vj1CbD';
+      '\\n\\nHeadliners Dance Competition \u2014 April 10\u201312, 2026\\nThe Stockbridge Theater at Pinkerton Academy, Derry, NH\\nMain Entrance GPS: https://maps.apple/p/QyFEj3q6vj1CbD';
     var location = 'The Stockbridge Theater at Pinkerton Academy, Derry, NH';
 
     var ics = buildICS(summary, desc, location, startDT, endDT, title);
@@ -1754,22 +2152,20 @@
 
   /* ===== SCHEDULE-SHIFT LOGIC (server-persisted for all users) ===== */
 
-  var _shiftTotal = 0; // cumulative minutes offset
+  var _shiftTotal = 0;
   var _isDirector = false;
   var _directorToken = '';
 
-  // Store original stage times on first load (needed for ALL users)
-  document.querySelectorAll('.routine-row').forEach(function(row) {
-    var el = row.querySelector('.time-stage');
-    if (el) el.dataset.originalTime = el.textContent.trim();
-  });
+  function storeOriginalTimes() {
+    document.querySelectorAll('.routine-row').forEach(function(row) {
+      var el = row.querySelector('.time-stage');
+      if (el) el.dataset.originalTime = el.textContent.trim();
+    });
+    document.querySelectorAll('.awards-bar[data-time], .special-bar[data-time]').forEach(function(bar) {
+      bar.dataset.originalTime = bar.dataset.time;
+    });
+  }
 
-  // Store original times for ceremony/special bars
-  document.querySelectorAll('.awards-bar[data-time], .special-bar[data-time]').forEach(function(bar) {
-    bar.dataset.originalTime = bar.dataset.time;
-  });
-
-  // Apply a given offset to all stage times in the DOM
   function applyShiftToDOM(offset) {
     document.querySelectorAll('.routine-row').forEach(function(row) {
       var el = row.querySelector('.time-stage');
@@ -1777,7 +2173,6 @@
       var orig = el.dataset.originalTime;
       if (orig === '\u2014' || !orig) return;
 
-      // Remove any previously injected scheduled-time or estimated-label elements
       var timeCol = el.parentElement;
       var oldSched = timeCol.querySelector('.time-scheduled');
       if (oldSched) oldSched.remove();
@@ -1804,24 +2199,20 @@
       if (h12 === 0) h12 = 12;
       var newTime = h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
 
-      // Show "Est." label above the shifted time
       var estLabel = document.createElement('div');
       estLabel.className = 'time-estimated-label';
       estLabel.textContent = 'Est.';
       timeCol.insertBefore(estLabel, el);
 
-      // Update stage time to the estimated time
       el.textContent = newTime;
       el.classList.add('time-shifted');
 
-      // Show original scheduled time below with strikethrough
       var schedEl = document.createElement('div');
       schedEl.className = 'time-scheduled';
       schedEl.textContent = orig;
       timeCol.insertBefore(schedEl, el.nextSibling);
     });
 
-    // Also shift ceremony/special bar times
     document.querySelectorAll('.awards-bar[data-time], .special-bar[data-time]').forEach(function(bar) {
       var orig = bar.dataset.originalTime;
       if (!orig) return;
@@ -1852,7 +2243,6 @@
     });
   }
 
-  // Show or hide the "Schedule times updated" banner
   function updateBanner(offset, timestamp) {
     var banner = document.getElementById('scheduleUpdatedBanner');
     var timeSpan = document.getElementById('updatedAtTime');
@@ -1865,8 +2255,7 @@
     }
   }
 
-  // Fetch current shift from server and apply for ALL visitors
-  (function loadShiftForAll() {
+  function loadShiftForAll() {
     fetch('/api/schedule-shift')
       .then(function(res) { return res.json(); })
       .then(function(data) {
@@ -1874,16 +2263,13 @@
           _shiftTotal = data.offset;
           applyShiftToDOM(_shiftTotal);
           updateBanner(_shiftTotal, data.timestamp);
-          // If director, also sync the panel display
           if (_isDirector) syncDirectorPanel();
         }
-        // Re-check past routines after shift is applied
         markPastRoutines();
       })
-      .catch(function() { /* silently ignore — show original times */ });
-  })();
+      .catch(function() { markPastRoutines(); });
+  }
 
-  // Director-only: sync the shift panel display to current offset
   function syncDirectorPanel() {
     var label = document.getElementById('shiftOffset');
     var resetBtn = document.getElementById('shiftResetBtn');
@@ -1900,7 +2286,6 @@
     }
   }
 
-  // Director-only: initialise the shift panel
   (function initShiftPanel() {
     var VALID_TOKEN = 'abc123';
     var params = new URLSearchParams(window.location.search);
@@ -1912,11 +2297,9 @@
 
     document.getElementById('shiftPanel').classList.add('visible');
     document.body.classList.add('shift-mode');
-
     syncDirectorPanel();
   })();
 
-  // Director action: shift the schedule and persist to server
   function shiftSchedule(delta) {
     if (delta === 0) {
       _shiftTotal = 0;
@@ -1924,18 +2307,12 @@
       _shiftTotal += delta;
     }
 
-    // Update director panel display
     syncDirectorPanel();
-
-    // Apply to DOM
     applyShiftToDOM(_shiftTotal);
-
-    // Re-check past routines after shift change
     markPastRoutines();
 
     showToast('Stage times shifted ' + (_shiftTotal === 0 ? 'back to original' : (_shiftTotal > 0 ? '+' : '') + _shiftTotal + ' min'));
 
-    // Build timestamp
     var stamp = null;
     if (_shiftTotal !== 0) {
       var now = new Date();
@@ -1946,10 +2323,8 @@
       stamp = dateStr + ' at ' + timeStr;
     }
 
-    // Update banner locally
     updateBanner(_shiftTotal, stamp);
 
-    // Persist to server so ALL users see the shift
     fetch('/api/schedule-shift?token=' + encodeURIComponent(_directorToken), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1962,7 +2337,7 @@
   /* ===== PAST ROUTINES LOGIC (15-minute grace period) ===== */
 
   var _pastVisible = true;
-  var _dateMap = { fri: '2026-03-06', sat: '2026-03-07', sun: '2026-03-08' };
+  var _dateMap = { fri: '2026-04-10', sat: '2026-04-11', sun: '2026-04-12' };
 
   function markPastRoutines() {
     var now = new Date();
@@ -1972,7 +2347,6 @@
       var el = row.querySelector('.time-stage');
       if (!el) return;
 
-      // Use the currently displayed time (accounts for director shift)
       var timeText = el.textContent.trim();
       if (timeText === '\u2014' || !timeText) return;
 
@@ -1983,7 +2357,6 @@
       var parsed = parseTime12(timeText);
       if (!parsed) return;
 
-      // Build full datetime for this routine and add 15-min grace
       var routineTime = new Date(dateStr + 'T' + parsed);
       var cutoff = new Date(routineTime.getTime() + 15 * 60 * 1000);
 
@@ -1996,7 +2369,6 @@
       }
     });
 
-    // Mark past ceremony/special bars (same 15-min grace)
     document.querySelectorAll('.awards-bar[data-time], .special-bar[data-time]').forEach(function(bar) {
       var timeText = bar.dataset.time;
       if (!timeText) return;
@@ -2019,7 +2391,6 @@
       }
     });
 
-    // Hide session headers and timelines when all their routines are past
     document.querySelectorAll('.session-header').forEach(function(header) {
       var timeline = header.nextElementSibling;
       if (!timeline || !timeline.classList.contains('timeline')) return;
@@ -2029,20 +2400,16 @@
 
       var allPast = true;
       rows.forEach(function(row) {
-        // Skip moved routines (time is a dash) — treat them as past
         var el = row.querySelector('.time-stage');
         if (el && el.textContent.trim() !== '\u2014' && !row.classList.contains('past-routine')) {
           allPast = false;
         }
       });
 
-      // Also check if the trailing ceremony/special bars are all past
       if (allPast) {
         var sibling = timeline.nextElementSibling;
         while (sibling && (sibling.classList.contains('awards-bar') || sibling.classList.contains('special-bar'))) {
-          if (!sibling.classList.contains('past-ceremony')) {
-            allPast = false;
-          }
+          if (!sibling.classList.contains('past-ceremony')) allPast = false;
           sibling = sibling.nextElementSibling;
         }
       }
@@ -2060,7 +2427,6 @@
       }
     });
 
-    // Update toggle bar visibility and count
     var bar = document.getElementById('pastToggleBar');
     var countEl = document.getElementById('pastToggleCount');
     var labelEl = document.getElementById('pastToggleLabel');
@@ -2094,8 +2460,8 @@
     updateCounts();
   }
 
-  // Run on load and then every 60 seconds
-  markPastRoutines();
+  /* ===== BOOT: Fetch schedule from Google Sheets ===== */
+  fetchSchedule();
   setInterval(markPastRoutines, 60000);
 </script>
 
