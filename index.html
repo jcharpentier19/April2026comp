@@ -390,13 +390,14 @@
 
 @media (max-width: 480px) {
   .rnum-mobile {
-    display: inline-block;
+    display: block;
     font-size: 12px;
     font-weight: 700;
     color: #3a2a2a;
     opacity: 1;
     letter-spacing: 0.3px;
     margin-bottom: 4px;
+    text-align: center;
   }
   .container {
     padding: 24px 16px 80px;
@@ -438,8 +439,11 @@
   .time-arrive {
     margin-top: 0;
   }
+  .time-label {
+    display: block;
+  }
   .time-awards {
-    margin-top: 2px;
+    margin-top: 0;
   }
   .time-estimated-label {
     display: none;
@@ -487,7 +491,10 @@
   .time-scheduled { font-size: 11px; color: var(--muted); margin-top: 1px; font-weight: 400; white-space: nowrap; text-decoration: line-through; }
   .time-estimated-label { font-size: 10px; color: #d35400; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 1px; white-space: nowrap; }
   .time-arrive { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 300; white-space: nowrap; }
-  .time-awards { font-size: 11px; color: #b8860b; margin-top: 3px; font-weight: 500; white-space: nowrap; }
+  .time-label { display: none; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-top: 4px; white-space: nowrap; }
+  .time-label:first-child { margin-top: 0; }
+  .time-label-awards { color: #b8860b; }
+  .time-awards { font-size: 11px; color: #b8860b; font-weight: 500; white-space: nowrap; }
 
   .awards-bar {
     background: linear-gradient(135deg, #fff8e8, #fff3e0);
@@ -1818,20 +1825,35 @@
       var timeCol = document.createElement('div');
       timeCol.className = 'routine-time-col';
 
+      var stageLabel = document.createElement('div');
+      stageLabel.className = 'time-label';
+      stageLabel.textContent = 'Stage';
+      timeCol.appendChild(stageLabel);
+
       var timeStage = document.createElement('div');
       timeStage.className = 'time-stage';
       timeStage.textContent = stageTime;
       timeCol.appendChild(timeStage);
 
+      var arriveLabel = document.createElement('div');
+      arriveLabel.className = 'time-label';
+      arriveLabel.textContent = 'Arrive';
+      timeCol.appendChild(arriveLabel);
+
       var timeArrive = document.createElement('div');
       timeArrive.className = 'time-arrive';
-      timeArrive.textContent = arriveTime === 'Already There' ? 'Already There' : ('Arrive ' + arriveTime);
+      timeArrive.textContent = arriveTime === 'Already There' ? 'Already There' : arriveTime;
       timeCol.appendChild(timeArrive);
 
       if (awardsTime) {
+        var awardsLabel = document.createElement('div');
+        awardsLabel.className = 'time-label time-label-awards';
+        awardsLabel.textContent = '\uD83C\uDFC6 Awards';
+        timeCol.appendChild(awardsLabel);
+
         var timeAwards = document.createElement('div');
         timeAwards.className = 'time-awards';
-        timeAwards.textContent = '\uD83C\uDFC6 Awards ' + awardsTime;
+        timeAwards.textContent = awardsTime;
         timeCol.appendChild(timeAwards);
       }
 
