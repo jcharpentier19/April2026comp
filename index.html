@@ -2151,7 +2151,7 @@
 
       var label = document.createElement('div');
       label.className = 'reminder-btn-label';
-      label.textContent = 'Remind 20 min before';
+      label.textContent = 'Remind';
       wrap.appendChild(label);
 
       if (hasAwards) {
@@ -2251,7 +2251,7 @@
         (dancer ? '\\nDancer(s): ' + dancer : '') +
         '\\nAwards Time: ' + awardsTimeText +
         '\\n\\nHeadliners Dance Competition \u2014 April 10\u201312, 2026\\nThe Stockbridge Theater at Pinkerton Academy, Derry, NH\\nMain Entrance GPS: https://maps.apple/p/QyFEj3q6vj1CbD';
-      var ics = buildICS(summary, desc, location, startDT, endDT, 'Awards for ' + title);
+      var ics = buildICS(summary, desc, location, startDT, endDT, 'Awards for ' + title, 'awards');
       triggerDownload(ics, title + '_awards_reminder');
       showToast('Awards reminder downloaded');
     } else {
@@ -2266,7 +2266,7 @@
         '\\nStage Time: ' + timeStage +
         (timeArrive ? '\\n' + timeArrive : '') +
         '\\n\\nHeadliners Dance Competition \u2014 April 10\u201312, 2026\\nThe Stockbridge Theater at Pinkerton Academy, Derry, NH\\nMain Entrance GPS: https://maps.apple/p/QyFEj3q6vj1CbD';
-      var ics = buildICS(summary, desc, location, startDT, endDT, title);
+      var ics = buildICS(summary, desc, location, startDT, endDT, title, 'routine');
       triggerDownload(ics, title + '_reminder');
       showToast('Routine reminder downloaded');
     }
@@ -2306,10 +2306,14 @@
     return '' + y + p(mo) + p(da) + 'T' + p(h) + p(mi) + p(s);
   }
 
-  function buildICS(summary, desc, location, start, end, title) {
+  function buildICS(summary, desc, location, start, end, title, type) {
     var uid = 'hdl-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '@headliners';
     var now = fmtICS(new Date());
-    return [
+    var alarmTrigger = type === 'awards' ? 'PT30M' : 'PT2H';
+    var alarmDesc = type === 'awards'
+      ? 'Reminder: ' + title + ' awards in 30 minutes'
+      : 'Reminder: ' + title + ' starts in 2 hours';
+    var lines = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'PRODID:-//Headliners Schedule//EN',
@@ -2341,13 +2345,14 @@
       'DESCRIPTION:' + desc,
       'LOCATION:' + location,
       'BEGIN:VALARM',
-      'TRIGGER:-PT20M',
+      'TRIGGER:-' + alarmTrigger,
       'ACTION:DISPLAY',
-      'DESCRIPTION:Reminder: ' + title + ' starts in 20 minutes',
+      'DESCRIPTION:' + alarmDesc,
       'END:VALARM',
       'END:VEVENT',
       'END:VCALENDAR'
-    ].join('\r\n');
+    ];
+    return lines.join('\r\n');
   }
 
   function showToast(msg) {
