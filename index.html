@@ -436,11 +436,41 @@
     padding-top: 8px;
     margin-top: 4px;
   }
+  .routine-dancer {
+    text-align: center;
+  }
+  .routine-title {
+    text-align: center;
+  }
+  .tags {
+    justify-content: center;
+  }
   .time-arrive {
     margin-top: 0;
   }
+  .time-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    justify-content: center;
+  }
   .time-label {
-    display: block;
+    display: inline;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .time-label-awards {
+    color: #b8860b;
+  }
+  .time-stage {
+    font-size: 14px;
+  }
+  .time-arrive,
+  .time-awards {
+    font-size: 13px;
   }
   .time-awards {
     margin-top: 0;
@@ -491,8 +521,8 @@
   .time-scheduled { font-size: 11px; color: var(--muted); margin-top: 1px; font-weight: 400; white-space: nowrap; text-decoration: line-through; }
   .time-estimated-label { font-size: 10px; color: #d35400; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 1px; white-space: nowrap; }
   .time-arrive { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 300; white-space: nowrap; }
-  .time-label { display: none; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-top: 4px; white-space: nowrap; }
-  .time-label:first-child { margin-top: 0; }
+  .time-row { display: contents; }
+  .time-label { display: none; }
   .time-label-awards { color: #b8860b; }
   .time-awards { font-size: 11px; color: #b8860b; font-weight: 500; white-space: nowrap; }
 
@@ -1825,36 +1855,42 @@
       var timeCol = document.createElement('div');
       timeCol.className = 'routine-time-col';
 
-      var stageLabel = document.createElement('div');
+      var stageRow = document.createElement('div');
+      stageRow.className = 'time-row';
+      var stageLabel = document.createElement('span');
       stageLabel.className = 'time-label';
-      stageLabel.textContent = 'Stage';
-      timeCol.appendChild(stageLabel);
-
-      var timeStage = document.createElement('div');
+      stageLabel.textContent = 'Stage: ';
+      stageRow.appendChild(stageLabel);
+      var timeStage = document.createElement('span');
       timeStage.className = 'time-stage';
       timeStage.textContent = stageTime;
-      timeCol.appendChild(timeStage);
+      stageRow.appendChild(timeStage);
+      timeCol.appendChild(stageRow);
 
-      var arriveLabel = document.createElement('div');
+      var arriveRow = document.createElement('div');
+      arriveRow.className = 'time-row';
+      var arriveLabel = document.createElement('span');
       arriveLabel.className = 'time-label';
-      arriveLabel.textContent = 'Arrive';
-      timeCol.appendChild(arriveLabel);
-
-      var timeArrive = document.createElement('div');
+      arriveLabel.textContent = 'Arrive: ';
+      arriveRow.appendChild(arriveLabel);
+      var timeArrive = document.createElement('span');
       timeArrive.className = 'time-arrive';
       timeArrive.textContent = arriveTime === 'Already There' ? 'Already There' : arriveTime;
-      timeCol.appendChild(timeArrive);
+      arriveRow.appendChild(timeArrive);
+      timeCol.appendChild(arriveRow);
 
       if (awardsTime) {
-        var awardsLabel = document.createElement('div');
+        var awardsRow = document.createElement('div');
+        awardsRow.className = 'time-row';
+        var awardsLabel = document.createElement('span');
         awardsLabel.className = 'time-label time-label-awards';
-        awardsLabel.textContent = '\uD83C\uDFC6 Awards';
-        timeCol.appendChild(awardsLabel);
-
-        var timeAwards = document.createElement('div');
+        awardsLabel.textContent = '\uD83C\uDFC6 Awards: ';
+        awardsRow.appendChild(awardsLabel);
+        var timeAwards = document.createElement('span');
         timeAwards.className = 'time-awards';
         timeAwards.textContent = awardsTime;
-        timeCol.appendChild(timeAwards);
+        awardsRow.appendChild(timeAwards);
+        timeCol.appendChild(awardsRow);
       }
 
       card.appendChild(timeCol);
