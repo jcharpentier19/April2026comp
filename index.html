@@ -669,7 +669,6 @@
     color: var(--muted);
     cursor: pointer;
     transition: all 0.2s;
-    margin-top: 6px;
     flex-shrink: 0;
     padding: 0;
     -webkit-appearance: none;
@@ -685,12 +684,50 @@
     max-width: none;
     pointer-events: none;
   }
+  .reminder-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 6px;
+    position: relative;
+  }
   .reminder-btn-label {
     font-size: 9px;
     color: var(--muted);
     margin-top: 2px;
     text-align: center;
     opacity: 0.7;
+  }
+  .reminder-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    z-index: 100;
+    min-width: 160px;
+    padding: 4px 0;
+    display: none;
+  }
+  .reminder-menu.show { display: block; }
+  .reminder-menu-item {
+    display: block;
+    width: 100%;
+    padding: 8px 14px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 12px;
+    color: var(--deep);
+    cursor: pointer;
+    white-space: nowrap;
+    -webkit-appearance: none;
+  }
+  .reminder-menu-item:hover {
+    background: var(--soft-pink);
   }
   .reminder-toast {
     position: fixed;
@@ -2020,6 +2057,11 @@
       var timeText = timeStage.textContent.trim();
       if (timeText === '\u2014' || !timeText) return;
 
+      var hasAwards = !!row.querySelector('.time-awards');
+
+      var wrap = document.createElement('div');
+      wrap.className = 'reminder-wrap';
+
       var btn = document.createElement('button');
       btn.className = 'reminder-btn';
       btn.title = 'Add to calendar with reminder';
@@ -2027,18 +2069,80 @@
       btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
       btn.addEventListener('click', function(e) {
         e.stopPropagation();
-        downloadICS(row);
+        if (!hasAwards) {
+          downloadICS(row, 'routine');
+        } else {
+          toggleReminderMenu(wrap);
+        }
       });
-      timeCol.appendChild(btn);
+      wrap.appendChild(btn);
 
       var label = document.createElement('div');
       label.className = 'reminder-btn-label';
       label.textContent = 'Remind';
-      timeCol.appendChild(label);
+      wrap.appendChild(label);
+
+      if (hasAwards) {
+        var menu = document.createElement('div');
+        menu.className = 'reminder-menu';
+
+        var optRoutine = document.createElement('button');
+        optRoutine.className = 'reminder-menu-item';
+        optRoutine.textContent = '\uD83D\uDCE3 Routine Time';
+        optRoutine.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.remove('show');
+          downloadICS(row, 'routine');
+        });
+        menu.appendChild(optRoutine);
+
+        var optAwards = document.createElement('button');
+        optAwards.className = 'reminder-menu-item';
+        optAwards.textContent = '\uD83C\uDFC6 Awards Time';
+        optAwards.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.remove('show');
+          downloadICS(row, 'awards');
+        });
+        menu.appendChild(optAwards);
+
+        var optBoth = document.createElement('button');
+        optBoth.className = 'reminder-menu-item';
+        optBoth.textContent = '\uD83D\uDD14 Both';
+        optBoth.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.remove('show');
+          downloadICS(row, 'routine');
+          setTimeout(function() { downloadICS(row, 'awards'); }, 300);
+        });
+        menu.appendChild(optBoth);
+
+        wrap.appendChild(menu);
+      }
+
+      timeCol.appendChild(wrap);
     });
   }
 
-  function downloadICS(row) {
+  function toggleReminderMenu(wrap) {
+    var menu = wrap.querySelector('.reminder-menu');
+    if (!menu) return;
+    var wasOpen = menu.classList.contains('show');
+    // Close all open menus first
+    document.querySelectorAll('.reminder-menu.show').forEach(function(m) {
+      m.classList.remove('show');
+    });
+    if (!wasOpen) menu.classList.add('show');
+  }
+
+  // Close reminder menus on outside click
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.reminder-menu.show').forEach(function(m) {
+      m.classList.remove('show');
+    });
+  });
+
+  function downloadICS(row, type) {
     var title = (row.querySelector('.routine-title') || {}).textContent || 'Routine';
     title = title.trim();
     var dancer = (row.querySelector('.routine-dancer') || {}).textContent || '';
@@ -2047,38 +2151,65 @@
     timeStage = timeStage.trim();
     var timeArrive = (row.querySelector('.time-arrive') || {}).textContent || '';
     timeArrive = timeArrive.trim();
+    var awardsEl = row.querySelector('.time-awards');
+    var awardsTimeText = awardsEl ? awardsEl.textContent.replace(/^.*Awards\s*/, '').trim() : '';
     var day = row.dataset.day;
 
     var dateMap = { fri: '2026-04-10', sat: '2026-04-11', sun: '2026-04-12' };
     var dateStr = dateMap[day];
-    if (!dateStr || !timeStage) return;
 
-    var localTime = parseTime12(timeStage);
-    if (!localTime) return;
-
-    var startDT = new Date(dateStr + 'T' + localTime);
-    var endDT = new Date(startDT.getTime() + 5 * 60 * 1000);
-
-    var summary = title + (dancer ? ' \u2014 ' + dancer : '');
-    var desc = 'Routine: ' + title +
-      (dancer ? '\\nDancer(s): ' + dancer : '') +
-      '\\nStage Time: ' + timeStage +
-      (timeArrive ? '\\n' + timeArrive : '') +
-      '\\n\\nHeadliners Dance Competition \u2014 April 10\u201312, 2026\\nThe Stockbridge Theater at Pinkerton Academy, Derry, NH\\nMain Entrance GPS: https://maps.apple/p/QyFEj3q6vj1CbD';
     var location = 'The Stockbridge Theater at Pinkerton Academy, Derry, NH';
 
-    var ics = buildICS(summary, desc, location, startDT, endDT, title);
+    if (type === 'awards') {
+      if (!dateStr || !awardsTimeText) return;
+      // Parse awards time range (e.g., "12:00PM - 12:30PM")
+      var awardsParts = awardsTimeText.split(/\s*[\u2013\u2014-]\s*/);
+      var awardsStart = parseTime12(awardsParts[0]);
+      if (!awardsStart) return;
+      var startDT = new Date(dateStr + 'T' + awardsStart);
+      var endDT;
+      if (awardsParts[1]) {
+        var awardsEnd = parseTime12(awardsParts[1]);
+        endDT = awardsEnd ? new Date(dateStr + 'T' + awardsEnd) : new Date(startDT.getTime() + 30 * 60 * 1000);
+      } else {
+        endDT = new Date(startDT.getTime() + 30 * 60 * 1000);
+      }
+      var summary = 'Awards \u2014 ' + title + (dancer ? ' \u2014 ' + dancer : '');
+      var desc = 'Awards Ceremony for: ' + title +
+        (dancer ? '\\nDancer(s): ' + dancer : '') +
+        '\\nAwards Time: ' + awardsTimeText +
+        '\\n\\nHeadliners Dance Competition \u2014 April 10\u201312, 2026\\nThe Stockbridge Theater at Pinkerton Academy, Derry, NH\\nMain Entrance GPS: https://maps.apple/p/QyFEj3q6vj1CbD';
+      var ics = buildICS(summary, desc, location, startDT, endDT, 'Awards for ' + title);
+      triggerDownload(ics, title + '_awards_reminder');
+      showToast('Awards reminder downloaded');
+    } else {
+      if (!dateStr || !timeStage) return;
+      var localTime = parseTime12(timeStage);
+      if (!localTime) return;
+      var startDT = new Date(dateStr + 'T' + localTime);
+      var endDT = new Date(startDT.getTime() + 5 * 60 * 1000);
+      var summary = title + (dancer ? ' \u2014 ' + dancer : '');
+      var desc = 'Routine: ' + title +
+        (dancer ? '\\nDancer(s): ' + dancer : '') +
+        '\\nStage Time: ' + timeStage +
+        (timeArrive ? '\\n' + timeArrive : '') +
+        '\\n\\nHeadliners Dance Competition \u2014 April 10\u201312, 2026\\nThe Stockbridge Theater at Pinkerton Academy, Derry, NH\\nMain Entrance GPS: https://maps.apple/p/QyFEj3q6vj1CbD';
+      var ics = buildICS(summary, desc, location, startDT, endDT, title);
+      triggerDownload(ics, title + '_reminder');
+      showToast('Routine reminder downloaded');
+    }
+  }
 
+  function triggerDownload(ics, name) {
     var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = title.replace(/[^a-zA-Z0-9]/g, '_') + '_reminder.ics';
+    a.download = name.replace(/[^a-zA-Z0-9]/g, '_') + '.ics';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('Calendar event downloaded \u2014 open to add reminder');
   }
 
   function parseTime12(str) {
@@ -2138,14 +2269,9 @@
       'DESCRIPTION:' + desc,
       'LOCATION:' + location,
       'BEGIN:VALARM',
-      'TRIGGER:-PT30M',
+      'TRIGGER:-PT20M',
       'ACTION:DISPLAY',
-      'DESCRIPTION:Reminder: ' + title + ' starts in 30 minutes',
-      'END:VALARM',
-      'BEGIN:VALARM',
-      'TRIGGER:-PT60M',
-      'ACTION:DISPLAY',
-      'DESCRIPTION:Reminder: ' + title + ' starts in 1 hour',
+      'DESCRIPTION:Reminder: ' + title + ' starts in 20 minutes',
       'END:VALARM',
       'END:VEVENT',
       'END:VCALENDAR'
