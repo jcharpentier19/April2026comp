@@ -425,15 +425,21 @@
     padding: 12px 14px;
   }
   .routine-time-col {
-    text-align: left;
+    text-align: center;
     min-width: unset;
     display: flex;
-    align-items: baseline;
-    gap: 10px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    margin-top: 4px;
   }
   .time-arrive {
     margin-top: 0;
+  }
+  .time-awards {
+    margin-top: 2px;
   }
   .time-estimated-label {
     display: none;
@@ -441,14 +447,22 @@
   .time-scheduled {
     margin-top: 0;
   }
+  .reminder-wrap {
+    margin-top: 6px;
+  }
   .reminder-btn {
-    margin-top: 0;
-    width: 26px;
-    height: 26px;
-    align-self: center;
+    width: 32px;
+    height: 32px;
   }
   .reminder-btn-label {
-    display: none;
+    display: block;
+    font-size: 9px;
+    opacity: 0.6;
+  }
+  .reminder-menu {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
   }
   .awards-bar,
   .special-bar {
@@ -603,7 +617,7 @@
 
   @media (max-width: 540px) {
     .routine-card { flex-direction: column; align-items: stretch; gap: 8px; }
-    .routine-time-col { text-align: left; }
+    .routine-time-col { text-align: center; flex-direction: column; align-items: center; }
     .timeline::before { left: 20px; }
     .dot-col { width: 42px; }
     .awards-bar, .special-bar { margin-left: 0; }
@@ -2079,7 +2093,7 @@
 
       var label = document.createElement('div');
       label.className = 'reminder-btn-label';
-      label.textContent = 'Remind';
+      label.textContent = 'Remind 20 min before';
       wrap.appendChild(label);
 
       if (hasAwards) {
