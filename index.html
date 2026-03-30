@@ -471,7 +471,9 @@
   .time-stage {
     font-size: 14px;
   }
-  .time-arrive,
+  .time-arrive {
+    font-size: 14px;
+  }
   .time-awards {
     font-size: 13px;
   }
@@ -523,7 +525,7 @@
   .time-stage.time-shifted { color: #d35400; }
   .time-scheduled { font-size: 11px; color: var(--muted); margin-top: 1px; font-weight: 400; white-space: nowrap; text-decoration: line-through; }
   .time-estimated-label { font-size: 10px; color: #d35400; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 1px; white-space: nowrap; }
-  .time-arrive { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 300; white-space: nowrap; }
+  .time-arrive { font-size: 15px; color: var(--deep); margin-top: 2px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .time-awards { font-size: 11px; color: #b8860b; font-weight: 500; white-space: nowrap; }
 
   .awards-bar {
@@ -1855,18 +1857,6 @@
       var timeCol = document.createElement('div');
       timeCol.className = 'routine-time-col';
 
-      var stageRow = document.createElement('div');
-      stageRow.className = 'time-row';
-      var stageLabel = document.createElement('span');
-      stageLabel.className = 'time-label';
-      stageLabel.textContent = 'Stage: ';
-      stageRow.appendChild(stageLabel);
-      var timeStage = document.createElement('span');
-      timeStage.className = 'time-stage';
-      timeStage.textContent = stageTime;
-      stageRow.appendChild(timeStage);
-      timeCol.appendChild(stageRow);
-
       var arriveRow = document.createElement('div');
       arriveRow.className = 'time-row';
       var arriveLabel = document.createElement('span');
@@ -1878,6 +1868,18 @@
       timeArrive.textContent = arriveTime === 'Already There' ? 'Already There' : arriveTime;
       arriveRow.appendChild(timeArrive);
       timeCol.appendChild(arriveRow);
+
+      var stageRow = document.createElement('div');
+      stageRow.className = 'time-row';
+      var stageLabel = document.createElement('span');
+      stageLabel.className = 'time-label';
+      stageLabel.textContent = 'Stage: ';
+      stageRow.appendChild(stageLabel);
+      var timeStage = document.createElement('span');
+      timeStage.className = 'time-stage';
+      timeStage.textContent = stageTime;
+      stageRow.appendChild(timeStage);
+      timeCol.appendChild(stageRow);
 
       if (awardsTime) {
         var awardsRow = document.createElement('div');
