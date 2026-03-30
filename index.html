@@ -382,8 +382,8 @@
   .tag-newspot      { background: #e8f5ec; color: #2e6b45; letter-spacing: 0; font-style: italic; }
 
   .routine-time-col { text-align: right; flex-shrink: 0; min-width: 82px; }
-  .time-row { display: block; }
-  .time-label { display: none; }
+  .time-row { display: flex; align-items: baseline; gap: 4px; justify-content: flex-end; }
+  .time-label { display: inline; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.3px; white-space: nowrap; }
   .time-label-awards { color: #b8860b; }
 
   /* Mobile routine number badge — hidden on desktop, shown on mobile */
@@ -1861,7 +1861,7 @@
       arriveRow.className = 'time-row';
       var arriveLabel = document.createElement('span');
       arriveLabel.className = 'time-label';
-      arriveLabel.textContent = 'Arrive: ';
+      arriveLabel.textContent = '\uD83D\uDECE\uFE0F Arrive: ';
       arriveRow.appendChild(arriveLabel);
       var timeArrive = document.createElement('span');
       timeArrive.className = 'time-arrive';
@@ -1873,7 +1873,7 @@
       stageRow.className = 'time-row';
       var stageLabel = document.createElement('span');
       stageLabel.className = 'time-label';
-      stageLabel.textContent = 'Stage: ';
+      stageLabel.textContent = '\uD83C\uDFB6 Stage: ';
       stageRow.appendChild(stageLabel);
       var timeStage = document.createElement('span');
       timeStage.className = 'time-stage';
