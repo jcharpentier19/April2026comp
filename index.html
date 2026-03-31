@@ -869,11 +869,11 @@
   }
   .shift-btn:active {
     transform: scale(0.96);
-    background: var(--soft-pink);
-    border-color: var(--rose);
   }
-  .shift-btn.shift-minus { color: var(--rose); }
-  .shift-btn.shift-plus  { color: #2e6b45; }
+  .shift-btn.shift-ahead:active  { background: #245838; }
+  .shift-btn.shift-behind:active { background: #b8435a; }
+  .shift-btn.shift-ahead  { color: #ffffff; background: #2e6b45; border-color: #2e6b45; }
+  .shift-btn.shift-behind { color: #ffffff; background: var(--rose); border-color: var(--rose); }
   .shift-reset-btn {
     display: none;
     width: 100%;
@@ -1629,10 +1629,10 @@
   <div class="shift-panel-sub">Adjusts routine stage times only — arrival times stay fixed</div>
   <div class="shift-panel-offset" id="shiftOffset">No change</div>
   <div class="shift-btns">
-    <button class="shift-btn shift-minus" onclick="shiftSchedule(-5)">−5 min</button>
-    <button class="shift-btn shift-minus" onclick="shiftSchedule(-1)">−1 min</button>
-    <button class="shift-btn shift-plus"  onclick="shiftSchedule(1)">+1 min</button>
-    <button class="shift-btn shift-plus"  onclick="shiftSchedule(5)">+5 min</button>
+    <button class="shift-btn shift-ahead" onclick="shiftSchedule(-5)">5 min ahead</button>
+    <button class="shift-btn shift-ahead" onclick="shiftSchedule(-1)">1 min ahead</button>
+    <button class="shift-btn shift-behind"  onclick="shiftSchedule(1)">1 min behind</button>
+    <button class="shift-btn shift-behind"  onclick="shiftSchedule(5)">5 min behind</button>
   </div>
   <button class="shift-reset-btn" id="shiftResetBtn" onclick="shiftSchedule(0)">Reset to Original Times</button>
 </div>
