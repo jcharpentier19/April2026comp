@@ -1390,23 +1390,6 @@
 </head>
 <body>
 
-<!-- EARLY SCHEDULE POPUP -->
-<div class="popup-overlay" id="earlySchedulePopup">
-  <div class="popup-card">
-    <img src="AFDS_RECTANGLE_1500px.jpg" alt="AFDS Logo">
-    <div class="popup-emoji">🎉🩰✨</div>
-    <div class="popup-title">Great <span>News!</span></div>
-    <div class="popup-body">
-      We received the schedule a few days earlier than usual — so we're getting it out to you and your family &amp; friends ahead of time! 🥳
-    </div>
-    <div class="popup-note">
-      📌 Please keep in mind this is <strong>not the norm</strong> — we typically receive schedules about <strong>7 days before</strong> the event. Enjoy the extra prep time! 💃
-    </div>
-    <button class="popup-close-btn" onclick="closeEarlyPopup()">
-      Let's Go! 🎶
-    </button>
-  </div>
-</div>
 
 <!-- HERO -->
 <div class="hero">
@@ -2786,19 +2769,7 @@
     updateCounts();
   }
 
-  /* ===== EARLY SCHEDULE POPUP ===== */
-  function closeEarlyPopup() {
-    var overlay = document.getElementById('earlySchedulePopup');
-    if (!overlay) return;
-    overlay.classList.add('closing');
-    setTimeout(function() { overlay.remove(); }, 250);
-  }
-  // Also close when tapping outside the card
-  document.getElementById('earlySchedulePopup').addEventListener('click', function(e) {
-    if (e.target === this) closeEarlyPopup();
-  });
-
-  /* ===== BOOT: Fetch schedule from Google Sheets ===== */
+/* ===== BOOT: Fetch schedule from Google Sheets ===== */
   fetchSchedule();
   setInterval(markPastRoutines, 60000);
 </script>
