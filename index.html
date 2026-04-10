@@ -1758,6 +1758,7 @@
     <button class="shift-btn shift-behind"  onclick="shiftSchedule(5)">5 min behind</button>
   </div>
   <button class="shift-reset-btn" id="shiftResetBtn" onclick="shiftSchedule(0)">Reset This Day</button>
+  <button class="shift-reset-btn" id="shiftResetAllBtn" onclick="resetAllDays()">Reset All Days to Original Times</button>
 </div>
 
 <script>
@@ -2638,6 +2639,7 @@
   function syncDirectorPanel() {
     var label = document.getElementById('shiftOffset');
     var resetBtn = document.getElementById('shiftResetBtn');
+    var resetAllBtn = document.getElementById('shiftResetAllBtn');
     if (!label) return;
     var offset = _shiftOffsets[_activeShiftDay] || 0;
     if (offset === 0) {
@@ -2649,6 +2651,11 @@
       label.textContent = sign + offset + ' min';
       label.style.color = offset > 0 ? '#2e6b45' : 'var(--rose)';
       if (resetBtn) resetBtn.classList.add('visible');
+    }
+    // Show "Reset All" when any day has a shift
+    if (resetAllBtn) {
+      var anyShift = _shiftOffsets.fri !== 0 || _shiftOffsets.sat !== 0 || _shiftOffsets.sun !== 0;
+      resetAllBtn.classList.toggle('visible', anyShift);
     }
   }
 
@@ -2734,6 +2741,27 @@
     }).catch(function() {
       showToast('Warning: could not save shift to server');
     });
+  }
+
+  function resetAllDays() {
+    var days = ['fri', 'sat', 'sun'];
+    var pending = days.length;
+    days.forEach(function(day) {
+      _shiftOffsets[day] = 0;
+      _shiftTimestamps[day] = null;
+      fetch('/api/schedule-shift?token=' + encodeURIComponent(_directorToken), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ day: day, offset: 0, timestamp: null })
+      }).catch(function() {}).finally(function() {
+        pending--;
+        if (pending === 0) showToast('All days reset to original times');
+      });
+    });
+    syncDirectorPanel();
+    applyShiftToDOM();
+    markPastRoutines();
+    updateBanner();
   }
 
   /* ===== PAST ROUTINES LOGIC (15-minute grace period) ===== */
