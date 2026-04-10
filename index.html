@@ -831,7 +831,30 @@
   .shift-panel-sub {
     font-size: 11px;
     color: var(--muted);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+  }
+  .shift-day-tabs {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .shift-day-tab {
+    padding: 5px 18px;
+    border-radius: 8px;
+    border: 1.5px solid #ccc;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--deep);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .shift-day-tab:hover { border-color: var(--blush); color: var(--rose); }
+  .shift-day-tab.active {
+    background: var(--rose);
+    border-color: var(--rose);
+    color: #fff;
   }
   .shift-panel-offset {
     font-size: 22px;
@@ -1721,7 +1744,12 @@
 <!-- DIRECTOR SCHEDULE-SHIFT PANEL (hidden unless ?token= is present) -->
 <div class="shift-panel" id="shiftPanel">
   <div class="shift-panel-label">Schedule Shift</div>
-  <div class="shift-panel-sub">Adjusts routine stage times only — arrival times stay fixed</div>
+  <div class="shift-panel-sub">Adjusts stage times for the selected day only — arrival times stay fixed</div>
+  <div class="shift-day-tabs">
+    <button class="shift-day-tab" data-day="fri" onclick="selectShiftDay('fri',this)">Fri</button>
+    <button class="shift-day-tab" data-day="sat" onclick="selectShiftDay('sat',this)">Sat</button>
+    <button class="shift-day-tab" data-day="sun" onclick="selectShiftDay('sun',this)">Sun</button>
+  </div>
   <div class="shift-panel-offset" id="shiftOffset">No change</div>
   <div class="shift-btns">
     <button class="shift-btn shift-ahead" onclick="shiftSchedule(-5)">5 min ahead</button>
@@ -1729,7 +1757,7 @@
     <button class="shift-btn shift-behind"  onclick="shiftSchedule(1)">1 min behind</button>
     <button class="shift-btn shift-behind"  onclick="shiftSchedule(5)">5 min behind</button>
   </div>
-  <button class="shift-reset-btn" id="shiftResetBtn" onclick="shiftSchedule(0)">Reset to Original Times</button>
+  <button class="shift-reset-btn" id="shiftResetBtn" onclick="shiftSchedule(0)">Reset This Day</button>
 </div>
 
 <script>
@@ -2461,7 +2489,9 @@
 
   /* ===== SCHEDULE-SHIFT LOGIC (server-persisted for all users) ===== */
 
-  var _shiftTotal = 0;
+  var _shiftOffsets = { fri: 0, sat: 0, sun: 0 };
+  var _shiftTimestamps = { fri: null, sat: null, sun: null };
+  var _activeShiftDay = '';
   var _isDirector = false;
   var _directorToken = '';
 
@@ -2475,12 +2505,15 @@
     });
   }
 
-  function applyShiftToDOM(offset) {
+  function applyShiftToDOM() {
     document.querySelectorAll('.routine-row').forEach(function(row) {
       var el = row.querySelector('.time-stage');
       if (!el || !el.dataset.originalTime) return;
       var orig = el.dataset.originalTime;
       if (orig === '\u2014' || !orig) return;
+
+      var day = row.dataset.day;
+      var offset = _shiftOffsets[day] || 0;
 
       var timeCol = el.parentElement;
       var oldSched = timeCol.querySelector('.time-scheduled');
@@ -2526,6 +2559,9 @@
       var orig = bar.dataset.originalTime;
       if (!orig) return;
 
+      var day = bar.dataset.day;
+      var offset = _shiftOffsets[day] || 0;
+
       if (offset === 0) {
         bar.dataset.time = orig;
         var sub = bar.querySelector('.awards-bar-sub') || bar.querySelector('.special-bar-sub');
@@ -2552,14 +2588,25 @@
     });
   }
 
-  function updateBanner(offset, timestamp) {
+  function updateBanner() {
     var banner = document.getElementById('scheduleUpdatedBanner');
     var timeSpan = document.getElementById('updatedAtTime');
     if (!banner || !timeSpan) return;
-    if (offset === 0 || !timestamp) {
+
+    // Find the most recent timestamp across all days
+    var anyShift = false;
+    var latestStamp = null;
+    ['fri', 'sat', 'sun'].forEach(function(day) {
+      if (_shiftOffsets[day] && _shiftOffsets[day] !== 0) {
+        anyShift = true;
+        if (_shiftTimestamps[day]) latestStamp = _shiftTimestamps[day];
+      }
+    });
+
+    if (!anyShift || !latestStamp) {
       banner.classList.remove('visible');
     } else {
-      timeSpan.textContent = timestamp;
+      timeSpan.textContent = latestStamp;
       banner.classList.add('visible');
     }
   }
@@ -2568,11 +2615,20 @@
     fetch('/api/schedule-shift')
       .then(function(res) { return res.json(); })
       .then(function(data) {
-        if (data && data.offset && data.offset !== 0) {
-          _shiftTotal = data.offset;
-          applyShiftToDOM(_shiftTotal);
-          updateBanner(_shiftTotal, data.timestamp);
-          if (_isDirector) syncDirectorPanel();
+        if (data && data.offsets) {
+          var anyShift = false;
+          ['fri', 'sat', 'sun'].forEach(function(day) {
+            if (data.offsets[day]) {
+              _shiftOffsets[day] = data.offsets[day].offset || 0;
+              _shiftTimestamps[day] = data.offsets[day].timestamp || null;
+              if (_shiftOffsets[day] !== 0) anyShift = true;
+            }
+          });
+          if (anyShift) {
+            applyShiftToDOM();
+            updateBanner();
+            if (_isDirector) syncDirectorPanel();
+          }
         }
         markPastRoutines();
       })
@@ -2583,16 +2639,24 @@
     var label = document.getElementById('shiftOffset');
     var resetBtn = document.getElementById('shiftResetBtn');
     if (!label) return;
-    if (_shiftTotal === 0) {
+    var offset = _shiftOffsets[_activeShiftDay] || 0;
+    if (offset === 0) {
       label.textContent = 'No change';
       label.style.color = 'var(--deep)';
       if (resetBtn) resetBtn.classList.remove('visible');
     } else {
-      var sign = _shiftTotal > 0 ? '+' : '';
-      label.textContent = sign + _shiftTotal + ' min';
-      label.style.color = _shiftTotal > 0 ? '#2e6b45' : 'var(--rose)';
+      var sign = offset > 0 ? '+' : '';
+      label.textContent = sign + offset + ' min';
+      label.style.color = offset > 0 ? '#2e6b45' : 'var(--rose)';
       if (resetBtn) resetBtn.classList.add('visible');
     }
+  }
+
+  function selectShiftDay(day, btn) {
+    _activeShiftDay = day;
+    document.querySelectorAll('.shift-day-tab').forEach(function(t) { t.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    syncDirectorPanel();
   }
 
   (function initShiftPanel() {
@@ -2606,38 +2670,67 @@
 
     document.getElementById('shiftPanel').classList.add('visible');
     document.body.classList.add('shift-mode');
+
+    // Auto-select today's day tab
+    var today = new Date();
+    var todayStr = today.getFullYear() + '-' +
+      ('0' + (today.getMonth() + 1)).slice(-2) + '-' +
+      ('0' + today.getDate()).slice(-2);
+    var todayDay = '';
+    var dateMap = { fri: '2026-04-10', sat: '2026-04-11', sun: '2026-04-12' };
+    Object.keys(dateMap).forEach(function(key) {
+      if (dateMap[key] === todayStr) todayDay = key;
+    });
+    // Default to fri if today isn't a competition day
+    if (!todayDay) todayDay = 'fri';
+    _activeShiftDay = todayDay;
+    var tab = document.querySelector('.shift-day-tab[data-day="' + todayDay + '"]');
+    if (tab) tab.classList.add('active');
+
     syncDirectorPanel();
   })();
 
   function shiftSchedule(delta) {
-    if (delta === 0) {
-      _shiftTotal = 0;
-    } else {
-      _shiftTotal += delta;
+    var day = _activeShiftDay;
+    if (!day) {
+      showToast('Select a day first');
+      return;
     }
 
+    if (delta === 0) {
+      _shiftOffsets[day] = 0;
+      _shiftTimestamps[day] = null;
+    } else {
+      _shiftOffsets[day] = (_shiftOffsets[day] || 0) + delta;
+    }
+
+    var offset = _shiftOffsets[day];
+    var dayNames = { fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
+    var dayLabel = dayNames[day] || day;
+
     syncDirectorPanel();
-    applyShiftToDOM(_shiftTotal);
+    applyShiftToDOM();
     markPastRoutines();
 
-    showToast('Stage times shifted ' + (_shiftTotal === 0 ? 'back to original' : (_shiftTotal > 0 ? '+' : '') + _shiftTotal + ' min'));
+    showToast(dayLabel + ' times ' + (offset === 0 ? 'reset to original' : 'shifted ' + (offset > 0 ? '+' : '') + offset + ' min'));
 
     var stamp = null;
-    if (_shiftTotal !== 0) {
+    if (offset !== 0) {
       var now = new Date();
       var opts = { hour: 'numeric', minute: '2-digit', hour12: true };
       var dateOpts = { month: 'short', day: 'numeric' };
       var timeStr = now.toLocaleTimeString('en-US', opts);
       var dateStr = now.toLocaleDateString('en-US', dateOpts);
       stamp = dateStr + ' at ' + timeStr;
+      _shiftTimestamps[day] = stamp;
     }
 
-    updateBanner(_shiftTotal, stamp);
+    updateBanner();
 
     fetch('/api/schedule-shift?token=' + encodeURIComponent(_directorToken), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ offset: _shiftTotal, timestamp: stamp })
+      body: JSON.stringify({ day: day, offset: offset, timestamp: stamp })
     }).catch(function() {
       showToast('Warning: could not save shift to server');
     });
