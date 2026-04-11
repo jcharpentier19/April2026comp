@@ -1304,6 +1304,64 @@
     font-weight: 600;
     color: var(--rose);
   }
+  /* ===== ROUTINE TOTALS TABLE ===== */
+  .routine-totals-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .routine-totals-table thead th {
+    background: #f5f0f0;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 8px 10px;
+    text-align: center;
+    border-bottom: 2px solid var(--border);
+  }
+  .routine-totals-table thead th:first-child,
+  .routine-totals-table thead th:nth-child(2) { text-align: left; }
+  .routine-totals-table tbody td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #f0e8e8;
+    color: var(--text);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .routine-totals-table tbody td:first-child,
+  .routine-totals-table tbody td:nth-child(2) { text-align: left; }
+  .routine-totals-table tbody tr:last-child td { border-bottom: none; }
+  .routine-totals-table tbody tr:hover { background: var(--soft-pink); }
+  .routine-totals-table .level-cell { font-weight: 700; }
+  .routine-totals-table .level-cell.novice { color: #5b8c3e; }
+  .routine-totals-table .level-cell.intermediate { color: #2a7ab5; }
+  .routine-totals-table .level-cell.competitive { color: #cc1122; }
+  .routine-totals-table .na-cell { color: #ccc; font-size: 11px; }
+  .routine-totals-table .num-cell { font-weight: 600; }
+  .routine-totals-level-group { border-top: 2px solid #eee; }
+  .routine-totals-level-group:first-child { border-top: none; }
+  .routine-totals-summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .routine-totals-chip {
+    background: var(--soft-pink);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .routine-totals-chip strong { color: var(--rose); }
+
   @media (max-width: 480px) {
     .award-structure-section { padding: 12px 16px; }
     .award-structure-header { gap: 10px; }
@@ -1312,6 +1370,8 @@
     .award-toggle-btn { font-size: 12px; padding: 7px 14px; }
     .award-score-table { font-size: 13px; }
     .award-score-table thead th, .award-score-table tbody td { padding: 8px 10px; }
+    .routine-totals-table { font-size: 12px; }
+    .routine-totals-table thead th, .routine-totals-table tbody td { padding: 6px 6px; }
   }
 
 
@@ -1569,6 +1629,21 @@
         </table>
       </div>
 
+      <!-- Routine Totals (live from Google Sheets) -->
+      <div class="award-section-block">
+        <div class="award-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>
+          Routine Totals by Category
+        </div>
+        <div class="award-info-card" id="routineTotalsWrap">
+          <p style="font-size:13px;color:#777;margin-bottom:12px;">
+            Total number of routines competing in each category at this event. This data updates live.
+          </p>
+          <div id="routineTotalsLoading" style="text-align:center;padding:16px;color:#999;font-size:13px;">Loading routine totals&hellip;</div>
+          <div id="routineTotalsContent" style="display:none;"></div>
+        </div>
+      </div>
+
       <!-- Overall Awards -->
       <div class="award-section-block">
         <div class="award-section-title">
@@ -1673,9 +1748,9 @@
   </div>
 
   <div class="past-toggle-bar" id="pastToggleBar">
-    <button class="past-toggle-btn active" id="pastToggleBtn" onclick="togglePastRoutines()">
+    <button class="past-toggle-btn" id="pastToggleBtn" onclick="togglePastRoutines()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span id="pastToggleLabel">Hide Past Routines</span>
+      <span id="pastToggleLabel">Show Past Routines</span>
       <span class="past-toggle-count" id="pastToggleCount">0</span>
     </button>
   </div>
@@ -1768,6 +1843,13 @@
   var SCHEDULE_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + SCHEDULE_GID;
   var AWARDS_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + AWARDS_GID;
   var AWARDS_POLL_INTERVAL = 30000; // 30 seconds
+
+  /* ===== ROUTINE TOTALS SHEET CONFIG ===== */
+  var TOTALS_SHEET_ID = '1JhYPfcynIsS8ywAhQN0sDt27uzyV7e2tVwpMVHxhwig';
+  var TOTALS_GID = '0';
+  var TOTALS_URL = 'https://docs.google.com/spreadsheets/d/' + TOTALS_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + TOTALS_GID;
+  var TOTALS_POLL_INTERVAL = 60000; // 60 seconds
+  var _totalsHash = '';
 
   /* ===== CSV PARSER ===== */
   function parseCSV(text) {
@@ -2169,6 +2251,77 @@
     }
     return '' + hash;
   }
+
+  /* ===== ROUTINE TOTALS (live from Google Sheets) ===== */
+  function fetchRoutineTotals() {
+    fetch(TOTALS_URL + '&_t=' + Date.now())
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      })
+      .then(function(csv) {
+        var hash = simpleHash(csv);
+        if (hash === _totalsHash) return;
+        _totalsHash = hash;
+        var data = csvToObjects(csv);
+        renderRoutineTotals(data);
+      })
+      .catch(function(err) {
+        var el = document.getElementById('routineTotalsLoading');
+        if (el) el.textContent = 'Could not load routine totals.';
+      });
+  }
+
+  function renderRoutineTotals(rows) {
+    var levelOrder = ['Novice', 'Intermediate', 'Competitive'];
+    var levelClass = { 'Novice': 'novice', 'Intermediate': 'intermediate', 'Competitive': 'competitive' };
+
+    // Build table
+    var html = '<table class="routine-totals-table"><thead><tr>';
+    html += '<th>Level</th><th>Age</th><th>Category</th><th>Count</th><th>Overall</th>';
+    html += '</tr></thead><tbody>';
+
+    var grandTotal = 0;
+    var levelTotals = {};
+    var currentLevel = '';
+
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var level = r['Level'] || '';
+      var age = r['Age'] || '';
+      var category = r['Category'] || '';
+      var count = (r['Count'] || '').trim();
+      var overall = (r['Overall'] || '').trim();
+      var isNewLevel = level !== currentLevel;
+      if (isNewLevel) currentLevel = level;
+
+      var num = parseInt(count, 10);
+      if (!isNaN(num)) {
+        grandTotal += num;
+        levelTotals[level] = (levelTotals[level] || 0) + num;
+      }
+
+      html += '<tr' + (isNewLevel && i > 0 ? ' class="routine-totals-level-group"' : '') + '>';
+      html += '<td class="level-cell ' + (levelClass[level] || '') + '">' + (isNewLevel ? level : '') + '</td>';
+      html += '<td>' + age + '</td>';
+      html += '<td>' + category + '</td>';
+      html += '<td class="num-cell">' + (count || '&mdash;') + '</td>';
+      html += '<td style="font-size:12px;color:#777;">' + (overall || '&mdash;') + '</td>';
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+
+
+    document.getElementById('routineTotalsLoading').style.display = 'none';
+    var content = document.getElementById('routineTotalsContent');
+    content.innerHTML = html;
+    content.style.display = 'block';
+  }
+
+  // Start fetching routine totals immediately and poll
+  fetchRoutineTotals();
+  setInterval(fetchRoutineTotals, TOTALS_POLL_INTERVAL);
 
   /* ===== CORE UI FUNCTIONS ===== */
 
@@ -2738,7 +2891,7 @@
 
   /* ===== PAST ROUTINES LOGIC (15-minute grace period) ===== */
 
-  var _pastVisible = true;
+  var _pastVisible = false;
   var _dateMap = { fri: '2026-04-10', sat: '2026-04-11', sun: '2026-04-12' };
 
   function markPastRoutines() {
