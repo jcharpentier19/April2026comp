@@ -1637,7 +1637,7 @@
         </div>
         <div class="award-info-card" id="routineTotalsWrap">
           <p style="font-size:13px;color:#777;margin-bottom:12px;">
-            Number of routines AFDS has competing in each category at this event. This data updates live.
+            Total number of routines competing in each category at this event. This data updates live.
           </p>
           <div id="routineTotalsLoading" style="text-align:center;padding:16px;color:#999;font-size:13px;">Loading routine totals&hellip;</div>
           <div id="routineTotalsContent" style="display:none;"></div>
@@ -1748,9 +1748,9 @@
   </div>
 
   <div class="past-toggle-bar" id="pastToggleBar">
-    <button class="past-toggle-btn active" id="pastToggleBtn" onclick="togglePastRoutines()">
+    <button class="past-toggle-btn" id="pastToggleBtn" onclick="togglePastRoutines()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span id="pastToggleLabel">Hide Past Routines</span>
+      <span id="pastToggleLabel">Show Past Routines</span>
       <span class="past-toggle-count" id="pastToggleCount">0</span>
     </button>
   </div>
@@ -2312,16 +2312,6 @@
 
     html += '</tbody></table>';
 
-    // Summary chips
-    html += '<div class="routine-totals-summary">';
-    html += '<span class="routine-totals-chip"><strong>' + grandTotal + '</strong> total routines</span>';
-    for (var l = 0; l < levelOrder.length; l++) {
-      var lv = levelOrder[l];
-      if (levelTotals[lv]) {
-        html += '<span class="routine-totals-chip">' + lv + ': <strong>' + levelTotals[lv] + '</strong></span>';
-      }
-    }
-    html += '</div>';
 
     document.getElementById('routineTotalsLoading').style.display = 'none';
     var content = document.getElementById('routineTotalsContent');
@@ -2901,7 +2891,7 @@
 
   /* ===== PAST ROUTINES LOGIC (15-minute grace period) ===== */
 
-  var _pastVisible = true;
+  var _pastVisible = false;
   var _dateMap = { fri: '2026-04-10', sat: '2026-04-11', sun: '2026-04-12' };
 
   function markPastRoutines() {
