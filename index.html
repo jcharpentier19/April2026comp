@@ -1028,6 +1028,7 @@
   .award-tag-overall { background: #e8f5ec; color: #2e6b45; border: 1px solid #a0d8b0; }
   .award-tag-special { background: #fef3ff; color: #7a2a8a; border: 1px solid #dda0ee; font-size: 9px; text-transform: none; letter-spacing: 0; }
   .award-tag-special2 { background: #fff0f0; color: #8a2a2a; border: 1px solid #eea0a0; font-size: 9px; text-transform: none; letter-spacing: 0; }
+  .award-tag-special3 { background: #edf7ff; color: #1a5276; border: 1px solid #85c1e9; font-size: 9px; text-transform: none; letter-spacing: 0; }
 
   /* ===== PAST ROUTINES ===== */
   .routine-row.past-routine { display: none !important; }
@@ -2126,7 +2127,8 @@
       awardMap[num] = {
         adjudication: (a['Adjudication'] || '').trim(),
         special: (a['Special Awards'] || '').trim(),
-        special2: (a['Special Awards 2'] || '').trim()
+        special2: (a['Special Awards 2'] || '').trim(),
+        special3: (a['Special Awards 3'] || '').trim()
       };
     });
 
@@ -2137,7 +2139,7 @@
       if (!container) return;
 
       // Skip if nothing to show
-      if (!info.adjudication && !info.special && !info.special2) {
+      if (!info.adjudication && !info.special && !info.special2 && !info.special3) {
         container.style.display = 'none';
         container.innerHTML = '';
         return;
@@ -2188,6 +2190,14 @@
         var specials2 = info.special2.split('|').map(function(s) { return s.trim(); });
         specials2.forEach(function(s) {
           if (s) html += '<span class="award-tag award-tag-special2">\uD83C\uDFC5 ' + s + '</span>';
+        });
+      }
+
+      // Special awards 3
+      if (info.special3) {
+        var specials3 = info.special3.split('|').map(function(s) { return s.trim(); });
+        specials3.forEach(function(s) {
+          if (s) html += '<span class="award-tag award-tag-special3">\uD83D\uDCA0 ' + s + '</span>';
         });
       }
 
