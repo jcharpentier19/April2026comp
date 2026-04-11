@@ -1845,7 +1845,7 @@
   var AWARDS_POLL_INTERVAL = 30000; // 30 seconds
 
   /* ===== ROUTINE TOTALS SHEET CONFIG ===== */
-  var TOTALS_SHEET_ID = '1TXlKUT3Vso_qjFVDbNZp4PPFFLeFidTkeL25ASZ-deM';
+  var TOTALS_SHEET_ID = '1JhYPfcynIsS8ywAhQN0sDt27uzyV7e2tVwpMVHxhwig';
   var TOTALS_GID = '0';
   var TOTALS_URL = 'https://docs.google.com/spreadsheets/d/' + TOTALS_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + TOTALS_GID;
   var TOTALS_POLL_INTERVAL = 60000; // 60 seconds
@@ -2273,14 +2273,12 @@
   }
 
   function renderRoutineTotals(rows) {
-    var cols = ['Solo', 'Duo/Trio', 'Small Group', 'Large Group', 'Class'];
     var levelOrder = ['Novice', 'Intermediate', 'Competitive'];
     var levelClass = { 'Novice': 'novice', 'Intermediate': 'intermediate', 'Competitive': 'competitive' };
 
     // Build table
     var html = '<table class="routine-totals-table"><thead><tr>';
-    html += '<th>Level</th><th>Age</th>';
-    for (var c = 0; c < cols.length; c++) html += '<th>' + cols[c] + '</th>';
+    html += '<th>Level</th><th>Age</th><th>Category</th><th>Count</th><th>Overall</th>';
     html += '</tr></thead><tbody>';
 
     var grandTotal = 0;
@@ -2291,26 +2289,24 @@
       var r = rows[i];
       var level = r['Level'] || '';
       var age = r['Age'] || '';
+      var category = r['Category'] || '';
+      var count = (r['Count'] || '').trim();
+      var overall = (r['Overall'] || '').trim();
       var isNewLevel = level !== currentLevel;
       if (isNewLevel) currentLevel = level;
+
+      var num = parseInt(count, 10);
+      if (!isNaN(num)) {
+        grandTotal += num;
+        levelTotals[level] = (levelTotals[level] || 0) + num;
+      }
 
       html += '<tr' + (isNewLevel && i > 0 ? ' class="routine-totals-level-group"' : '') + '>';
       html += '<td class="level-cell ' + (levelClass[level] || '') + '">' + (isNewLevel ? level : '') + '</td>';
       html += '<td>' + age + '</td>';
-
-      for (var c = 0; c < cols.length; c++) {
-        var val = (r[cols[c]] || '').trim();
-        if (!val || val === 'NA' || val === 'na') {
-          html += '<td class="na-cell">&mdash;</td>';
-        } else {
-          var num = parseInt(val, 10);
-          if (!isNaN(num)) {
-            grandTotal += num;
-            levelTotals[level] = (levelTotals[level] || 0) + num;
-          }
-          html += '<td class="num-cell">' + val + '</td>';
-        }
-      }
+      html += '<td>' + category + '</td>';
+      html += '<td class="num-cell">' + (count || '&mdash;') + '</td>';
+      html += '<td style="font-size:12px;color:#777;">' + (overall || '&mdash;') + '</td>';
       html += '</tr>';
     }
 
