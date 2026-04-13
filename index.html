@@ -1377,6 +1377,88 @@
   }
 
 
+  /* ===== THANK YOU / CELEBRATION POPUP ===== */
+  .celebration-popup .popup-card {
+    max-width: 520px;
+    padding: 36px 28px 28px;
+    background: linear-gradient(170deg, #fff9f0 0%, #fff 40%, #fef0f0 100%);
+    border: 2px solid #f5d5d5;
+    overflow: hidden;
+  }
+  .celebration-trophy { font-size: 52px; margin-bottom: 4px; line-height: 1; }
+  .celebration-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--rose);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .celebration-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--deep);
+    margin-bottom: 18px;
+    line-height: 1.4;
+  }
+  .celebration-subtitle em { color: var(--rose); font-style: italic; }
+  .celebration-body {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #333;
+    text-align: left;
+    margin-bottom: 22px;
+    max-height: 45vh;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .celebration-body p { margin: 0 0 12px; }
+  .celebration-body p:last-child { margin-bottom: 0; }
+  .celebration-signature {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--rose);
+    text-align: right;
+    margin-top: 16px;
+    font-weight: 600;
+  }
+  .celebration-hearts {
+    font-size: 18px;
+    margin-top: 4px;
+    text-align: right;
+  }
+  .celebration-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: linear-gradient(135deg, var(--rose), #d4451a);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 12px 32px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    width: 100%;
+    max-width: 280px;
+    margin-top: 8px;
+  }
+  .celebration-close-btn:hover { background: linear-gradient(135deg, #a00e1c, #b33816); transform: scale(1.03); }
+  .celebration-close-btn:active { transform: scale(0.97); }
+
+  /* confetti canvas */
+  #confetti-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    pointer-events: none;
+  }
+
   /* ===== EARLY SCHEDULE POPUP ===== */
   .popup-overlay {
     position: fixed;
@@ -1475,6 +1557,26 @@
 </head>
 <body>
 
+
+<!-- CELEBRATION POPUP -->
+<div class="popup-overlay celebration-popup" id="celebrationPopup">
+  <div class="popup-card">
+    <div class="celebration-trophy">🏆</div>
+    <div class="celebration-title">WE DID IT!</div>
+    <div class="celebration-subtitle">A Fine Dance Studio is proud to have been awarded the<br><em>Excellence In Choreography Award</em><br>for the entire weekend!</div>
+    <div class="celebration-body">
+      <p>This honor belongs to every single person in our AFDS family. To our incredibly talented in-house faculty and guest choreographers and teachers, thank you for your vision, your artistry, and your relentless dedication to the craft. Great choreography isn't just a dream; it's in the execution. Some of you are the dreamers, and some of you are the cleaners, and we need every single one of you.</p>
+      <p>To our dancers, you brought it to life. Your hard work, trust, and commitment on that stage is what made this possible.</p>
+      <p>To our parents, none of this happens without you. Your unwavering support of your children and of this program is the foundation everything is built on. We are so grateful to be on this journey with you as part of our dance family.</p>
+      <p>Thank you to each and every teacher who pours into the technical training and growth of our students every single day. Strong foundations build extraordinary dancers.</p>
+      <p>Teamwork makes the dream work.</p>
+      <div class="celebration-signature">— Miss Abigail</div>
+      <div class="celebration-hearts">🖤❤️</div>
+    </div>
+    <button class="celebration-close-btn" onclick="closeCelebration()">🎉 Let's Celebrate! 🎉</button>
+  </div>
+</div>
+<canvas id="confetti-canvas"></canvas>
 
 <!-- HERO -->
 <div class="hero">
@@ -3034,6 +3136,71 @@
 
     updateCounts();
   }
+
+/* ===== CELEBRATION POPUP + CONFETTI ===== */
+  (function() {
+    var canvas = document.getElementById('confetti-canvas');
+    var ctx = canvas.getContext('2d');
+    var pieces = [];
+    var running = true;
+    var colors = ['#cc1122','#f5b8b8','#FFD700','#ff6b6b','#4ecdc4','#ff9ff3','#feca57','#48dbfb','#ff6348','#1dd1a1'];
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    for (var i = 0; i < 150; i++) {
+      pieces.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        w: Math.random() * 10 + 5,
+        h: Math.random() * 6 + 3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vy: Math.random() * 3 + 2,
+        vx: Math.random() * 2 - 1,
+        rot: Math.random() * 360,
+        rv: Math.random() * 6 - 3,
+        o: 1
+      });
+    }
+
+    function draw() {
+      if (!running) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      var alive = false;
+      for (var i = 0; i < pieces.length; i++) {
+        var p = pieces[i];
+        p.y += p.vy;
+        p.x += p.vx;
+        p.rot += p.rv;
+        if (p.y > canvas.height + 20) {
+          p.o -= 0.02;
+          if (p.o <= 0) continue;
+        }
+        alive = true;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.o);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      if (alive) requestAnimationFrame(draw);
+      else { canvas.remove(); }
+    }
+    requestAnimationFrame(draw);
+
+    window.closeCelebration = function() {
+      var popup = document.getElementById('celebrationPopup');
+      popup.classList.add('closing');
+      running = false;
+      setTimeout(function() {
+        popup.remove();
+        canvas.remove();
+      }, 300);
+    };
+  })();
 
 /* ===== BOOT: Fetch schedule from Google Sheets ===== */
   fetchSchedule();
