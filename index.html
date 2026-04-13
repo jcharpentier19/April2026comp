@@ -1034,11 +1034,11 @@
   .routine-row.past-routine { display: none !important; }
   .routine-row.past-routine.show-past { display: flex !important; }
   .routine-row.past-routine.show-past.hidden { display: none !important; }
-  .routine-row.past-routine.show-past .routine-card { opacity: 0.55; }
+  .routine-row.past-routine.show-past .routine-card { opacity: 1; }
   .awards-bar.past-ceremony, .special-bar.past-ceremony { display: none !important; }
-  .awards-bar.past-ceremony.show-past, .special-bar.past-ceremony.show-past { display: flex !important; opacity: 0.55; }
+  .awards-bar.past-ceremony.show-past, .special-bar.past-ceremony.show-past { display: flex !important; opacity: 1; }
   .session-header.past-session { display: none !important; }
-  .session-header.past-session.show-past { display: block !important; opacity: 0.55; }
+  .session-header.past-session.show-past { display: block !important; opacity: 1; }
   .timeline.past-session { display: none !important; }
   .timeline.past-session.show-past { display: block !important; }
 
@@ -1852,9 +1852,9 @@
   </div>
 
   <div class="past-toggle-bar" id="pastToggleBar">
-    <button class="past-toggle-btn" id="pastToggleBtn" onclick="togglePastRoutines()">
+    <button class="past-toggle-btn active" id="pastToggleBtn" onclick="togglePastRoutines()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span id="pastToggleLabel">Show Past Routines</span>
+      <span id="pastToggleLabel">Hide Past Routines</span>
       <span class="past-toggle-count" id="pastToggleCount">0</span>
     </button>
   </div>
@@ -3013,7 +3013,7 @@
 
   /* ===== PAST ROUTINES LOGIC (15-minute grace period) ===== */
 
-  var _pastVisible = false;
+  var _pastVisible = true;
   var _dateMap = { fri: '2026-04-10', sat: '2026-04-11', sun: '2026-04-12' };
 
   function markPastRoutines() {
